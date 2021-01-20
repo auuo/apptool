@@ -69,7 +69,7 @@ func ClearUpdate(m *Model) {
 var userModelTmpl = `package model
 
 const (
-	USER_NOT_COMPLATE = 0
+	USER_NOT_COMPLETE = 0
 	USER_REGULAR      = 1
 )
 
@@ -161,7 +161,7 @@ func Abort(c *gin.Context, err error) {
 		if dErr.Err != nil {
 			logs.Ctx(c, dErr).Error("service error, internal error: " + dErr.Err.Error())
 		} else {
-			logs.Ctx(c, dErr).Info("service error")
+			logs.Ctx(c, dErr).Warn("service error")
 		}
 		c.JSON(http.StatusOK, gin.H{
 			"code": dErr.Code,
