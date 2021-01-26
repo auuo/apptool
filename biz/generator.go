@@ -39,6 +39,7 @@ func init() {
 	template.Must(tmpl.New("pingTmpl").Parse(pingTmpl))
 	template.Must(tmpl.New("appResponseTmpl").Parse(appResponseTmpl))
 	template.Must(tmpl.New("appWrapperTmpl").Parse(appWrapperTmpl))
+	template.Must(tmpl.New("appContextTmpl").Parse(appContextTmpl))
 	template.Must(tmpl.New("errTmpl").Parse(errTmpl))
 	template.Must(tmpl.New("errCommonTmpl").Parse(errCommonTmpl))
 	template.Must(tmpl.New("genLogIdTmpl").Parse(genLogIdTmpl))
@@ -88,6 +89,7 @@ func (p *project) generator() error {
 			genTmpl{tmplName: "pingTmpl", file: filepath.Join(p.dir, "handler/ping.go")},
 			genTmpl{tmplName: "appWrapperTmpl", file: filepath.Join(p.dir, "pkg/app/wrapper.go")},
 			genTmpl{tmplName: "appResponseTmpl", file: filepath.Join(p.dir, "pkg/app/response.go"), param: modParam},
+			genTmpl{tmplName: "appContextTmpl", file: filepath.Join(p.dir, "pkg/app/context.go"), param: modParam},
 			genTmpl{tmplName: "errTmpl", file: filepath.Join(p.dir, "pkg/e/err.go")},
 			genTmpl{tmplName: "errCommonTmpl", file: filepath.Join(p.dir, "pkg/e/common.go")},
 			genTmpl{tmplName: "logTmpl", file: filepath.Join(p.dir, "pkg/logs/log.go")},

@@ -204,6 +204,24 @@ func Wrap(handler Handler) func(*gin.Context) {
 }
 `
 
+var appContextTmpl = `package app
+
+import (
+	"context"
+	"{{.modName}}/pkg/logs"
+
+	"github.com/gin-gonic/gin"
+)
+
+func NewCtx(c *gin.Context) context.Context {
+	id := c.Value(logs.LogIdKey)
+	if id == 0 {
+		id = logs.NewLogId()
+	}
+	return context.WithValue(c.Copy(), logs.LogIdKey, id)
+}
+`
+
 var errTmpl = `package e
 
 import (
@@ -284,7 +302,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Ctx(ctx context.Context, err error) *logrus.Entry {
+type F = logrus.Fields
+
+func CtxError(ctx context.Context, err error) *logrus.Entry {
 	entry := logrus.WithField("logId", ctx.Value(LogIdKey))
 	if err != nil {
 		entry = entry.WithError(err)
@@ -296,25 +316,14 @@ func Ctx(ctx context.Context, err error) *logrus.Entry {
 var logIdTmpl = `package logs
 
 import (
-	"context"
 	"fmt"
 	"sync/atomic"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 var localId int64 = 0
 
 const LogIdKey = "logId"
-
-func NewCtx(c *gin.Context) context.Context {
-	id := c.Value(LogIdKey)
-	if id == 0 {
-		id = NewLogId()
-	}
-	return context.WithValue(c.Copy(), LogIdKey, id)
-}
 
 func NewLogId() string {
 	return fmt.Sprintf("%d%d", getMSTimestamp(), atomic.AddInt64(&localId, 1))
