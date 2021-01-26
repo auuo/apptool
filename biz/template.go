@@ -143,7 +143,6 @@ import (
 	"net/http"
 
 	"{{.modName}}/pkg/e"
-	"{{.modName}}/pkg/logs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -158,20 +157,13 @@ func Success(c *gin.Context, data interface{}) {
 
 func Abort(c *gin.Context, err error) {
 	if dErr, ok := err.(*e.MatrixError); ok {
-		if dErr.Err != nil {
-			logs.Ctx(c, dErr).Error("service error, internal error: " + dErr.Err.Error())
-		} else {
-			logs.Ctx(c, dErr).Warn("service error")
-		}
-		c.JSON(http.StatusOK, gin.H{
+		c.AbortWithStatusJSON(http.StatusOK, gin.H{
 			"code": dErr.Code,
 			"msg":  dErr.Msg,
 			"data": nil,
 		})
-		c.Abort()
 		return
 	}
-	logs.Ctx(c, err).Error("unknown error")
 	c.AbortWithStatusJSON(http.StatusOK, gin.H{
 		"code": 500,
 		"msg":  err.Error(),
@@ -308,18 +300,20 @@ import (
 	"fmt"
 	"sync/atomic"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 var localId int64 = 0
 
 const LogIdKey = "logId"
 
-func NewCtx(c context.Context) context.Context {
+func NewCtx(c *gin.Context) context.Context {
 	id := c.Value(LogIdKey)
 	if id == 0 {
 		id = NewLogId()
 	}
-	return context.WithValue(c, LogIdKey, id)
+	return context.WithValue(c.Copy(), LogIdKey, id)
 }
 
 func NewLogId() string {
