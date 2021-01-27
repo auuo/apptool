@@ -311,6 +311,10 @@ func CtxError(ctx context.Context, err error) *logrus.Entry {
 	}
 	return entry
 }
+
+func CtxInfo(ctx context.Context) *logrus.Entry {
+	return logrus.WithField("logId", ctx.Value(LogIdKey))
+}
 `
 
 var logIdTmpl = `package logs
