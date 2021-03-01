@@ -50,20 +50,12 @@ redis:
 
 var baseModelTmpl = `package model
 
+import "time"
+
 type Model struct {
-	ID        int64 ` + "`json:\"id\" gorm:\"primary_key;auto_increment\"`" + `
-	CreatedAt int   ` + "`json:\"created_at\"`" + `
-	UpdatedAt int   ` + "`json:\"updated_at\"`" + `
-}
-
-func ClearCreate(m *Model) {
-	m.ID = 0
-	ClearUpdate(m)
-}
-
-func ClearUpdate(m *Model) {
-	m.CreatedAt = 0
-	m.UpdatedAt = 0
+	ID        int64     ` + "`json:\"id\" gorm:\"primary_key;auto_increment\"`" + `
+	CreatedAt time.Time ` + "`json:\"createdAt\"`" + `
+	UpdatedAt time.Time ` + "`json:\"updatedAt\"`" + `
 }
 `
 var userModelTmpl = `package model
@@ -96,7 +88,6 @@ import (
 	"{{.modName}}/dao"
 	"{{.modName}}/handler"
 	"{{.modName}}/middleware"
-	"{{.modName}}/pkg/app"
 
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
@@ -111,7 +102,7 @@ func initRouter() *gin.Engine {
 	r := gin.Default()
 	r.Use(middleware.GenLogId)
 
-	r.GET("ping", app.Wrap(handler.Pong))
+	r.GET("ping", handler.Pong)
 
 	return r
 }
@@ -122,7 +113,7 @@ func main() {
 
 	r := initRouter()
 	pprof.Register(r)
-	dao.InitMysql()
+	dao.Init()
 
 	log.Fatal(r.Run(":8080"))
 }
@@ -132,8 +123,10 @@ var pingTmpl = `package handler
 
 import "github.com/gin-gonic/gin"
 
-func Pong(c *gin.Context) (interface{}, error) {
-	return "pong", nil
+func Pong(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"message": "pong",
+	})
 }
 `
 
@@ -185,22 +178,6 @@ func SetUserId(c *gin.Context, id int64) {
 
 func GetUserId(c *gin.Context) int64 {
 	return c.GetInt64("userId")
-}
-`
-
-var appWrapperTmpl = `package app
-
-import (
-	"github.com/gin-gonic/gin"
-)
-
-type Handler func(c *gin.Context) (interface{}, error)
-
-func Wrap(handler Handler) func(*gin.Context) {
-	return func(c *gin.Context) {
-		resp, err := handler(c)
-		JSON(c, resp, err)
-	}
 }
 `
 
@@ -312,7 +289,7 @@ func CtxError(ctx context.Context, err error) *logrus.Entry {
 	return entry
 }
 
-func CtxInfo(ctx context.Context) *logrus.Entry {
+func CtxLog(ctx context.Context) *logrus.Entry {
 	return logrus.WithField("logId", ctx.Value(LogIdKey))
 }
 `
@@ -353,7 +330,7 @@ require (
 	gorm.io/gorm v1.20.1
 )
 
-go 1.13
+go 1.15
 `
 
 var daoTmpl = `package dao
@@ -369,6 +346,10 @@ import (
 )
 
 var DB *gorm.DB
+
+func Init() {
+	InitMysql()
+}
 
 func InitMysql() {
 	d := conf.Ins.Database
